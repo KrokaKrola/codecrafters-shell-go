@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/builtins"
+	"github.com/codecrafters-io/shell-starter-go/app/executables"
 )
 
 func main() {
@@ -28,7 +29,10 @@ func main() {
 
 		command, ok := builtIns[cmd]
 		if !ok {
-			fmt.Fprintf(writer, "%s: command not found\n", cmd)
+			if err := executables.RunExecutable(writer, lineFields); err != nil {
+				fmt.Fprintln(os.Stderr, "error:", err.Error())
+			}
+
 			writer.Flush()
 			continue
 		}
