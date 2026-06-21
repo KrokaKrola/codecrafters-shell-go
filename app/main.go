@@ -5,16 +5,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
-)
 
-const (
-	exitCommand string = "exit"
-	echoCommand string = "echo"
+	"github.com/codecrafters-io/shell-starter-go/app/builtins"
 )
 
 func main() {
 	writer := bufio.NewWriter(os.Stdout)
 	scanner := bufio.NewScanner(os.Stdin)
+	builtIns := builtins.NewBuiltIns(writer)
 
 	for {
 		fmt.Print("$ ")
@@ -24,30 +22,20 @@ func main() {
 		}
 
 		line := scanner.Text()
+		lineFields := strings.Fields(line)
 
-		splits := strings.Fields(line)
+		cmd := lineFields[0]
 
-		if len(splits) == 0 {
-			fmt.Fprintln(os.Stderr, "invalid number of arguments")
-			break
+		command, ok := builtIns[cmd]
+		if !ok {
+			fmt.Fprintf(writer, "%s: command not found\n", cmd)
+			writer.Flush()
+			continue
 		}
 
-		cmd := splits[0]
-
-		switch cmd {
-		case exitCommand:
-			os.Exit(0)
-		case echoCommand:
-			if len(splits) < 2 {
-				fmt.Println()
-				break
-			}
-
-			args := splits[1:]
-
-			fmt.Println(strings.Join(args, " "))
-		default:
-			fmt.Fprintf(writer, "%s: command not found\n", cmd)
+		if err := command.Run(lineFields); err != nil {
+			fmt.Fprintln(writer, err.Error())
+			break
 		}
 
 		writer.Flush()
