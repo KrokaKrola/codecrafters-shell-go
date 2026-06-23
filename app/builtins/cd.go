@@ -15,7 +15,17 @@ func (c CdBuiltIn) Run(args []string) error {
 		return nil
 	}
 
-	if err := os.Chdir(args[1]); err != nil {
+	path := args[1]
+
+	if args[1] == "~" {
+		homedir, err := os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+		path = homedir
+	}
+
+	if err := os.Chdir(path); err != nil {
 		return fmt.Errorf("cd: %s: No such file or directory", args[1])
 	}
 
