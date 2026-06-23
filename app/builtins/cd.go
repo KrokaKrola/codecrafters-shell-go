@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path"
 )
 
 type CdBuiltIn struct {
@@ -16,14 +15,9 @@ func (c CdBuiltIn) Run(args []string) error {
 		return nil
 	}
 
-	// abs path handling
-	if path.IsAbs(args[1]) {
-		if err := os.Chdir(args[1]); err != nil {
-			return fmt.Errorf("cd: %s: No such file or directory", args[1])
-		}
-
-		return nil
+	if err := os.Chdir(args[1]); err != nil {
+		return fmt.Errorf("cd: %s: No such file or directory", args[1])
 	}
 
-	panic("unimplemented")
+	return nil
 }
