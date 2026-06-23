@@ -12,7 +12,7 @@ type EchoBuiltIn struct {
 
 func (e EchoBuiltIn) Run(input []string) error {
 	if len(input) < 2 {
-		fmt.Println()
+		fmt.Fprintln(e.writer)
 		return nil
 	}
 

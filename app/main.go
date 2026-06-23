@@ -25,6 +25,10 @@ func main() {
 		line := scanner.Text()
 		lineFields := strings.Fields(line)
 
+		if len(lineFields) == 0 {
+			continue
+		}
+
 		cmd := lineFields[0]
 
 		command, ok := builtIns[cmd]
@@ -39,7 +43,7 @@ func main() {
 
 		if err := command.Run(lineFields); err != nil {
 			fmt.Fprintln(writer, err.Error())
-			break
+			continue
 		}
 
 		writer.Flush()
