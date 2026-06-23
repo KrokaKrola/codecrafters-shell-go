@@ -13,6 +13,7 @@ const (
 	echoCommand string = "echo"
 	typeCommand string = "type"
 	pwdCommand  string = "pwd"
+	cdCommand   string = "cd"
 )
 
 type BuiltInsMap map[string]BuiltIn
@@ -24,6 +25,7 @@ func NewBuiltIns(writer *bufio.Writer) BuiltInsMap {
 	result[echoCommand] = EchoBuiltIn{writer: writer}
 	result[typeCommand] = TypeBuiltIn{writer: writer, builtIns: result}
 	result[pwdCommand] = PwdBuiltIn{writer: writer}
+	result[cdCommand] = CdBuiltIn{writer: writer}
 
 	return result
 }

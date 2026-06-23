@@ -43,6 +43,7 @@ func main() {
 
 		if err := command.Run(lineFields); err != nil {
 			fmt.Fprintln(writer, err.Error())
+			writer.Flush()
 			continue
 		}
 
