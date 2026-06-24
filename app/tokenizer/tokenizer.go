@@ -56,12 +56,23 @@ func tokenize(input string) ([]Token, error) {
 			pos += 1
 			ch = input[pos]
 
+			isBackslashed := false
+
 			for pos < len(input) && ch != quoteType {
+				if ch == escapeChar && !isBackslashed {
+					isBackslashed = true
+					continue
+				}
+
 				if err := sb.WriteByte(ch); err != nil {
 					return nil, err
 				}
 
 				pos += 1
+
+				if isBackslashed {
+					isBackslashed = false
+				}
 
 				if pos < len(input) {
 					ch = input[pos]
