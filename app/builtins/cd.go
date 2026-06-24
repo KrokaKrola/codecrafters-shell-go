@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type CdBuiltIn struct {
@@ -11,22 +13,21 @@ type CdBuiltIn struct {
 }
 
 func (c CdBuiltIn) Run(args []string) error {
-	if len(args) == 1 {
-		return nil
-	}
+	var path string
 
-	path := args[1]
-
-	if args[1] == "~" {
+	if len(args) == 1 || args[1] == "~" || strings.HasPrefix(args[1], "~/") {
 		homedir, err := os.UserHomeDir()
 		if err != nil {
 			return err
 		}
-		path = homedir
+
+		path = filepath.Join(homedir, strings.TrimPrefix(args[1], "~"))
+	} else {
+		path = args[1]
 	}
 
 	if err := os.Chdir(path); err != nil {
-		return fmt.Errorf("cd: %s: No such file or directory", args[1])
+		return fmt.Errorf("cd: %s: No such file or directory", path)
 	}
 
 	return nil

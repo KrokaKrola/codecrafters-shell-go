@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/builtins"
 	"github.com/codecrafters-io/shell-starter-go/app/executables"
+	"github.com/codecrafters-io/shell-starter-go/app/tokenizer"
 )
 
 func main() {
@@ -23,17 +23,23 @@ func main() {
 		}
 
 		line := scanner.Text()
-		lineFields := strings.Fields(line)
 
-		if len(lineFields) == 0 {
+		args, err := tokenizer.Tokenize(line)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err.Error())
+			writer.Flush()
 			continue
 		}
 
-		cmd := lineFields[0]
+		if len(args) == 0 {
+			continue
+		}
+
+		cmd := args[0]
 
 		command, ok := builtIns[cmd]
 		if !ok {
-			if err := executables.RunExecutable(writer, lineFields); err != nil {
+			if err := executables.RunExecutable(writer, args); err != nil {
 				fmt.Fprintln(os.Stderr, "error:", err.Error())
 			}
 
@@ -41,7 +47,7 @@ func main() {
 			continue
 		}
 
-		if err := command.Run(lineFields); err != nil {
+		if err := command.Run(args); err != nil {
 			fmt.Fprintln(writer, err.Error())
 			writer.Flush()
 			continue
