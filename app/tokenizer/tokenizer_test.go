@@ -1,6 +1,7 @@
 package tokenizer_test
 
 import (
+	"fmt"
 	"slices"
 	"testing"
 
@@ -35,6 +36,8 @@ func TestTokenize(t *testing.T) {
 		{name: "\\n becomes just n", input: "echo test\\nexample", want: []string{"echo", "testnexample"}},
 		{name: "first backslash escapes the second, and the result is a single literal backslash", input: "echo hello\\\\world", want: []string{"echo", "hello\\world"}},
 		{name: "\\' makes the single quotes literal characters", input: "echo \\'hello\\'", want: []string{"echo", "'hello'"}},
+
+		{name: "backslah within double qoutes", input: "echo \"hello'example'\\\\'shell\"", want: []string{"echo", "hello'example'\\'shell"}},
 	}
 
 	for _, tt := range tests {
@@ -51,6 +54,8 @@ func TestTokenize(t *testing.T) {
 			if tt.wantErr {
 				t.Fatal("Tokenize() succeeded unexpectedly")
 			}
+
+			fmt.Printf("Tokenize() = %#v, want %#v\n", got, tt.want)
 
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("Tokenize() = %#v, want %#v", got, tt.want)

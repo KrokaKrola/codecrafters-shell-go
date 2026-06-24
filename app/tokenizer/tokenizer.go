@@ -13,14 +13,21 @@ const (
 )
 
 const (
-	singleQuote byte = '\''
-	doubleQuote byte = '"'
-	escapeChar  byte = '\\'
+	singleQuote  byte = '\''
+	doubleQuote  byte = '"'
+	escapeChar   byte = '\\'
+	dollarChar   byte = '$'
+	backtickChar byte = '`'
+	newLineChar  byte = '\n'
 )
 
 type Token struct {
 	Type  tokenType
 	Value string
+}
+
+func isDoubleQuoteEscape(ch byte) bool {
+	return ch == doubleQuote || ch == escapeChar || ch == dollarChar || ch == backtickChar || ch == newLineChar
 }
 
 func isChar(input string, pos int) bool {
@@ -56,12 +63,13 @@ func tokenize(input string) ([]Token, error) {
 			pos += 1
 			ch = input[pos]
 
-			isBackslashed := false
-
 			for pos < len(input) && ch != quoteType {
-				if ch == escapeChar && !isBackslashed {
-					isBackslashed = true
-					continue
+				if ch == escapeChar && quoteType == doubleQuote {
+					next := pos + 1
+					if next < len(input) && isDoubleQuoteEscape(input[next]) {
+						pos += 1
+						ch = input[pos]
+					}
 				}
 
 				if err := sb.WriteByte(ch); err != nil {
@@ -69,11 +77,6 @@ func tokenize(input string) ([]Token, error) {
 				}
 
 				pos += 1
-
-				if isBackslashed {
-					isBackslashed = false
-				}
-
 				if pos < len(input) {
 					ch = input[pos]
 				}
