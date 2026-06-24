@@ -15,6 +15,7 @@ const (
 const (
 	singleQuote byte = '\''
 	doubleQuote byte = '"'
+	escapeChar  byte = '\\'
 )
 
 type Token struct {
@@ -78,10 +79,27 @@ func tokenize(input string) ([]Token, error) {
 		default:
 			sb := strings.Builder{}
 
-			for pos < len(input) && isChar(input, pos) {
+			isBackslashed := false
+
+			for pos < len(input) {
+				if !isChar(input, pos) && !isBackslashed {
+					break
+				}
+
+				if input[pos] == escapeChar && !isBackslashed {
+					isBackslashed = true
+					pos += 1
+					continue
+				}
+
 				if err := sb.WriteByte(input[pos]); err != nil {
 					return nil, err
 				}
+
+				if isBackslashed {
+					isBackslashed = false
+				}
+
 				pos += 1
 			}
 

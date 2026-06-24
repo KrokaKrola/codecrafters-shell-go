@@ -29,6 +29,12 @@ func TestTokenize(t *testing.T) {
 		{name: "adjacent double quoted strings are concatenated", input: "echo \"hello\"\"world\"", want: []string{"echo", "helloworld"}},
 		{name: "empty double quotes are ignored", input: "echo hello\"\"world", want: []string{"echo", "helloworld"}},
 		{name: "adjacent double quoted words concatenates into one arg", input: "echo hello\"world\"", want: []string{"echo", "helloworld"}},
+
+		{name: "each \\ creates a literal space as a part of one argument", input: "echo three\\ \\ \\ spaces", want: []string{"echo", "three   spaces"}},
+		{name: "backslah preserves the first space literaly, but the shell collapses the subsequent unescaped spaces", input: "echo before\\     after", want: []string{"echo", "before ", "after"}},
+		{name: "\\n becomes just n", input: "echo test\\nexample", want: []string{"echo", "testnexample"}},
+		{name: "first backslash escapes the second, and the result is a single literal backslash", input: "echo hello\\\\world", want: []string{"echo", "hello\\world"}},
+		{name: "\\' makes the single quotes literal characters", input: "echo \\'hello\\'", want: []string{"echo", "'hello'"}},
 	}
 
 	for _, tt := range tests {
@@ -37,7 +43,7 @@ func TestTokenize(t *testing.T) {
 
 			if gotErr != nil {
 				if !tt.wantErr {
-					t.Errorf("Tokenize() failed: %v", gotErr)
+					t.Errorf("Tokenize() failed: %#v", gotErr)
 				}
 				return
 			}
@@ -47,7 +53,7 @@ func TestTokenize(t *testing.T) {
 			}
 
 			if !slices.Equal(got, tt.want) {
-				t.Errorf("Tokenize() = %v, want %v", got, tt.want)
+				t.Errorf("Tokenize() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
