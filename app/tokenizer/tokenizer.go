@@ -12,9 +12,18 @@ const (
 	Whitespace tokenType = "whitespace"
 )
 
+const (
+	singleQuote byte = '\''
+	doubleQuote byte = '"'
+)
+
 type Token struct {
 	Type  tokenType
 	Value string
+}
+
+func isChar(input string, pos int) bool {
+	return input[pos] != singleQuote && input[pos] != doubleQuote && !unicode.IsSpace(rune(input[pos]))
 }
 
 func tokenize(input string) ([]Token, error) {
@@ -33,14 +42,20 @@ func tokenize(input string) ([]Token, error) {
 
 			tokens = append(tokens, Token{Type: Whitespace})
 			pos += 1
-		case ch == '\'':
+		case ch == singleQuote, ch == doubleQuote:
 			sb := strings.Builder{}
+
+			quoteType := singleQuote
+
+			if ch == doubleQuote {
+				quoteType = doubleQuote
+			}
 
 			// starting with a quote, so we are moving to the inner content
 			pos += 1
 			ch = input[pos]
 
-			for pos < len(input) && ch != '\'' {
+			for pos < len(input) && ch != quoteType {
 				if err := sb.WriteByte(ch); err != nil {
 					return nil, err
 				}
@@ -63,7 +78,7 @@ func tokenize(input string) ([]Token, error) {
 		default:
 			sb := strings.Builder{}
 
-			for pos < len(input) && input[pos] != '\'' && !unicode.IsSpace(rune(input[pos])) {
+			for pos < len(input) && isChar(input, pos) {
 				if err := sb.WriteByte(input[pos]); err != nil {
 					return nil, err
 				}

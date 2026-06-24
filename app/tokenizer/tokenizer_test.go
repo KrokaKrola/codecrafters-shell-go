@@ -14,14 +14,21 @@ func TestTokenize(t *testing.T) {
 		want    []string
 		wantErr bool
 	}{
+		// base test cases
 		{name: "basic case", input: "echo hello world", want: []string{"echo", "hello", "world"}},
 		{name: "consequtive spaces are collapsed unless quoted", input: "echo hello    world", want: []string{"echo", "hello", "world"}},
-		{name: "spaces are preserved within quotes", input: "echo 'hello    world'", want: []string{"echo", "hello    world"}},
-		{name: "adjacent quoted strings are concatenated", input: "echo 'hello''world'", want: []string{"echo", "helloworld"}},
-		{name: "empty quotes are ignored", input: "echo hello''world", want: []string{"echo", "helloworld"}},
-		{name: "adjacent quoted words concatenates into one arg", input: "echo hello'world'", want: []string{"echo", "helloworld"}},
 		{name: "sanitizes space in the end of the input", input: "echo hello ", want: []string{"echo", "hello"}},
 		{name: "sanitizes space in the begining of the input", input: " echo hello ", want: []string{"echo", "hello"}},
+
+		{name: "spaces are preserved within single quotes", input: "echo 'hello    world'", want: []string{"echo", "hello    world"}},
+		{name: "adjacent single quoted strings are concatenated", input: "echo 'hello''world'", want: []string{"echo", "helloworld"}},
+		{name: "empty single quotes are ignored", input: "echo hello''world", want: []string{"echo", "helloworld"}},
+		{name: "adjacent single quoted words concatenates into one arg", input: "echo hello'world'", want: []string{"echo", "helloworld"}},
+
+		{name: "spaces are preserved within double quotes", input: "echo \"hello    world\"", want: []string{"echo", "hello    world"}},
+		{name: "adjacent double quoted strings are concatenated", input: "echo \"hello\"\"world\"", want: []string{"echo", "helloworld"}},
+		{name: "empty double quotes are ignored", input: "echo hello\"\"world", want: []string{"echo", "helloworld"}},
+		{name: "adjacent double quoted words concatenates into one arg", input: "echo hello\"world\"", want: []string{"echo", "helloworld"}},
 	}
 
 	for _, tt := range tests {
