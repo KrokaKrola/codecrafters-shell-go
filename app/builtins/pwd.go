@@ -1,22 +1,21 @@
 package builtins
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"os"
 )
 
 type PwdBuiltIn struct {
-	writer *bufio.Writer
 }
 
-func (p PwdBuiltIn) Run([]string) error {
+func (p PwdBuiltIn) Run(writer io.Writer, args []string) error {
 	dir, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	if _, err := fmt.Fprintf(p.writer, "%s\n", dir); err != nil {
+	if _, err := fmt.Fprintf(writer, "%s\n", dir); err != nil {
 		return err
 	}
 

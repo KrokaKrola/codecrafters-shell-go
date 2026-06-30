@@ -1,23 +1,22 @@
 package builtins
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"strings"
 )
 
 type EchoBuiltIn struct {
-	writer *bufio.Writer
 }
 
-func (e EchoBuiltIn) Run(input []string) error {
+func (e EchoBuiltIn) Run(writer io.Writer, input []string) error {
 	if len(input) < 2 {
-		fmt.Fprintln(e.writer)
+		fmt.Fprintln(writer)
 		return nil
 	}
 
 	args := input[1:]
 
-	fmt.Fprintln(e.writer, strings.Join(args, " "))
+	fmt.Fprintln(writer, strings.Join(args, " "))
 	return nil
 }

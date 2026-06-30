@@ -1,6 +1,7 @@
 package builtins
 
 import (
+	"io"
 	"os"
 	"strconv"
 )
@@ -8,7 +9,7 @@ import (
 type ExitBuiltIn struct {
 }
 
-func (t ExitBuiltIn) Run(input []string) error {
+func (t ExitBuiltIn) Run(writer io.Writer, input []string) error {
 	if len(input) > 1 {
 		statusCodeArg := input[1]
 

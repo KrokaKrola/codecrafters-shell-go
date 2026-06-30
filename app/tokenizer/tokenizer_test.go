@@ -1,7 +1,6 @@
 package tokenizer_test
 
 import (
-	"fmt"
 	"slices"
 	"testing"
 
@@ -42,7 +41,7 @@ func TestTokenize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, gotErr := tokenizer.Tokenize(tt.input)
+			got, _, gotErr := tokenizer.Tokenize(tt.input)
 
 			if gotErr != nil {
 				if !tt.wantErr {
@@ -54,8 +53,6 @@ func TestTokenize(t *testing.T) {
 			if tt.wantErr {
 				t.Fatal("Tokenize() succeeded unexpectedly")
 			}
-
-			fmt.Printf("Tokenize() = %#v, want %#v\n", got, tt.want)
 
 			if !slices.Equal(got, tt.want) {
 				t.Errorf("Tokenize() = %#v, want %#v", got, tt.want)

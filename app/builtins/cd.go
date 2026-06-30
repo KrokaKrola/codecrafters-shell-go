@@ -1,18 +1,17 @@
 package builtins
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 type CdBuiltIn struct {
-	writer *bufio.Writer
 }
 
-func (c CdBuiltIn) Run(args []string) error {
+func (c CdBuiltIn) Run(writer io.Writer, args []string) error {
 	var path string
 
 	if len(args) == 1 || args[1] == "~" || strings.HasPrefix(args[1], "~/") {

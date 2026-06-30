@@ -1,26 +1,25 @@
 package builtins
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os/exec"
 )
 
 type TypeBuiltIn struct {
-	writer   *bufio.Writer
-	builtIns BuiltInsMap
+	builtIns *BuiltIns
 }
 
-func (t TypeBuiltIn) Run(input []string) error {
+func (t TypeBuiltIn) Run(writer io.Writer, input []string) error {
 	if len(input) < 2 {
 		return nil
 	}
 
 	for _, el := range input[1:] {
-		if _, ok := t.builtIns[el]; ok {
-			fmt.Fprintf(t.writer, "%s is a shell builtin\n", el)
+		if _, ok := t.builtIns.Get(el); ok {
+			fmt.Fprintf(writer, "%s is a shell builtin\n", el)
 			continue
 		}
 
@@ -30,11 +29,11 @@ func (t TypeBuiltIn) Run(input []string) error {
 				continue
 			}
 
-			fmt.Fprintf(t.writer, "%s: not found\n", el)
+			fmt.Fprintf(writer, "%s: not found\n", el)
 			continue
 		}
 
-		fmt.Fprintf(t.writer, "%s is %s\n", el, path)
+		fmt.Fprintf(writer, "%s is %s\n", el, path)
 	}
 
 	return nil

@@ -1,11 +1,11 @@
 package builtins
 
 import (
-	"bufio"
+	"io"
 )
 
 type BuiltIn interface {
-	Run([]string) error
+	Run(io.Writer, []string) error
 }
 
 const (
@@ -16,16 +16,29 @@ const (
 	cdCommand   string = "cd"
 )
 
-type BuiltInsMap map[string]BuiltIn
+type BuiltIns struct {
+	commands map[string]BuiltIn
+}
 
-func NewBuiltIns(writer *bufio.Writer) BuiltInsMap {
-	result := make(BuiltInsMap)
+func (b *BuiltIns) add(key string, value BuiltIn) {
+	b.commands[key] = value
+}
 
-	result[exitCommand] = ExitBuiltIn{}
-	result[echoCommand] = EchoBuiltIn{writer: writer}
-	result[typeCommand] = TypeBuiltIn{writer: writer, builtIns: result}
-	result[pwdCommand] = PwdBuiltIn{writer: writer}
-	result[cdCommand] = CdBuiltIn{writer: writer}
+func (b *BuiltIns) Get(key string) (BuiltIn, bool) {
+	v, ok := b.commands[key]
+	return v, ok
+}
+
+func NewBuiltIns() *BuiltIns {
+	result := &BuiltIns{
+		commands: make(map[string]BuiltIn),
+	}
+
+	result.add(echoCommand, EchoBuiltIn{})
+	result.add(exitCommand, ExitBuiltIn{})
+	result.add(pwdCommand, PwdBuiltIn{})
+	result.add(cdCommand, CdBuiltIn{})
+	result.add(typeCommand, TypeBuiltIn{builtIns: result})
 
 	return result
 }

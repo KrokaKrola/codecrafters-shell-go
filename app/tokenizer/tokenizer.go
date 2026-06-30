@@ -1,6 +1,7 @@
 package tokenizer
 
 import (
+	"fmt"
 	"strings"
 	"unicode"
 )
@@ -8,8 +9,9 @@ import (
 type tokenType string
 
 const (
-	word       tokenType = "word"
-	Whitespace tokenType = "whitespace"
+	Word           tokenType = "word"
+	whitespace     tokenType = "whitespace"
+	StdoutRedirect tokenType = "stdoutRedirect"
 )
 
 const (
@@ -41,14 +43,15 @@ func tokenize(input string) ([]Token, error) {
 
 	for pos < len(input) {
 		ch := input[pos]
+
 		switch {
 		case unicode.IsSpace(rune(ch)):
-			if len(tokens) > 0 && tokens[len(tokens)-1].Type == Whitespace {
+			if len(tokens) > 0 && tokens[len(tokens)-1].Type == whitespace {
 				pos += 1
 				continue
 			}
 
-			tokens = append(tokens, Token{Type: Whitespace})
+			tokens = append(tokens, Token{Type: whitespace})
 			pos += 1
 		case ch == singleQuote, ch == doubleQuote:
 			sb := strings.Builder{}
@@ -89,7 +92,7 @@ func tokenize(input string) ([]Token, error) {
 				continue
 			}
 
-			tokens = append(tokens, Token{Type: word, Value: sb.String()})
+			tokens = append(tokens, Token{Type: Word, Value: sb.String()})
 		default:
 			sb := strings.Builder{}
 
@@ -117,11 +120,11 @@ func tokenize(input string) ([]Token, error) {
 				pos += 1
 			}
 
-			tokens = append(tokens, Token{Type: word, Value: sb.String()})
+			tokens = append(tokens, Token{Type: Word, Value: sb.String()})
 		}
 	}
 
-	if len(tokens) > 0 && tokens[len(tokens)-1].Type == Whitespace {
+	if len(tokens) > 0 && tokens[len(tokens)-1].Type == whitespace {
 		return tokens[:len(tokens)-1], nil
 	}
 
@@ -130,59 +133,78 @@ func tokenize(input string) ([]Token, error) {
 
 func process(tokens []Token) ([]Token, error) {
 	var result []Token
-
 	pos := 0
 
 	for pos < len(tokens) {
 		token := tokens[pos]
 
 		switch token.Type {
-		case word:
+		case Word:
 			sb := strings.Builder{}
 
 			sb.WriteString(token.Value)
 
-			for pos+1 < len(tokens) && tokens[pos+1].Type == word {
+			// handle case, when there is no whitespace between current word and next word
+			for pos+1 < len(tokens) && tokens[pos+1].Type == Word {
 				sb.WriteString(tokens[pos+1].Value)
 				pos += 1
 			}
 
 			pos += 1
 
-			if len(result) > 0 && result[len(result)-1].Type == word {
-				result[len(result)-1].Value += sb.String()
-			} else {
-				result = append(result, Token{Type: word, Value: sb.String()})
+			value := sb.String()
+
+			switch value {
+			case ">", "1>":
+				if pos+1 >= len(tokens) || tokens[pos+1].Type != Word {
+					return nil, fmt.Errorf("Expected a string, but found end of the input")
+				}
+
+				result = append(result, Token{Type: StdoutRedirect, Value: tokens[pos+1].Value})
+				pos += 2
+			default:
+				result = append(result, Token{Type: Word, Value: sb.String()})
 			}
-		case Whitespace:
+		case whitespace:
 			pos += 1
 
 			result = append(result, token)
+		default:
+			return nil, fmt.Errorf("Unknown token type: %s, value=%q", token.Type, token.Value)
 		}
-
 	}
 
 	return result, nil
 }
 
-func Tokenize(input string) ([]string, error) {
+func Tokenize(input string) ([]string, *Token, error) {
+	var stdoutRedirect *Token
 	tokens, err := tokenize(input)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	tokens, err = process(tokens)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var result []string
 
-	for _, token := range tokens {
-		if token.Type != Whitespace {
+	for idx, token := range tokens {
+		if idx == 0 && token.Type != Word {
+			return nil, nil, fmt.Errorf("Expected a string, but found a: %s", token.Type)
+		}
+
+		if token.Type == StdoutRedirect {
+			stdoutRedirect = &Token{Type: token.Type, Value: token.Value}
+			continue
+		}
+
+		if token.Type != whitespace {
 			result = append(result, token.Value)
 		}
 	}
 
-	return result, nil
+	return result, stdoutRedirect, nil
 }

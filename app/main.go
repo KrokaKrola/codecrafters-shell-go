@@ -11,9 +11,9 @@ import (
 )
 
 func main() {
-	writer := bufio.NewWriter(os.Stdout)
+	defaultWriter := bufio.NewWriter(os.Stdout)
 	scanner := bufio.NewScanner(os.Stdin)
-	builtIns := builtins.NewBuiltIns(writer)
+	builtIns := builtins.NewBuiltIns()
 
 	for {
 		fmt.Print("$ ")
@@ -24,10 +24,10 @@ func main() {
 
 		line := scanner.Text()
 
-		args, err := tokenizer.Tokenize(line)
+		args, stdoutRedirect, err := tokenizer.Tokenize(line)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err.Error())
-			writer.Flush()
+			defaultWriter.Flush()
 			continue
 		}
 
@@ -37,17 +37,28 @@ func main() {
 
 		cmd := args[0]
 
-		command, ok := builtIns[cmd]
-		if !ok {
-			if err := executables.RunExecutable(writer, args); err != nil {
+		writer := defaultWriter
+
+		if stdoutRedirect != nil {
+			file, err := os.OpenFile(stdoutRedirect.Value, os.O_CREATE|os.O_WRONLY, 0644)
+
+			if err != nil {
 				fmt.Fprintln(os.Stderr, "error:", err.Error())
+				continue
 			}
+
+			writer = bufio.NewWriter(file)
+		}
+
+		command, ok := builtIns.Get(cmd)
+		if !ok {
+			executables.RunExecutable(writer, args)
 
 			writer.Flush()
 			continue
 		}
 
-		if err := command.Run(args); err != nil {
+		if err := command.Run(writer, args); err != nil {
 			fmt.Fprintln(writer, err.Error())
 			writer.Flush()
 			continue

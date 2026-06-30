@@ -1,13 +1,13 @@
 package executables
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 )
 
-func RunExecutable(writer *bufio.Writer, args []string) error {
+func RunExecutable(writer io.Writer, args []string) error {
 	_, err := exec.LookPath(args[0])
 	if err != nil {
 		fmt.Fprintf(writer, "%s: command not found\n", args[0])
