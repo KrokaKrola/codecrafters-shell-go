@@ -13,6 +13,8 @@ const (
 	whitespace     tokenType = "whitespace"
 	StdoutRedirect tokenType = "stdoutRedirect"
 	StderrRedirect tokenType = "stderrRedirect"
+	StdoutAppend   tokenType = "stdoutAppend"
+	StderrAppend   tokenType = "stderrAppend"
 )
 
 const (
@@ -22,6 +24,15 @@ const (
 	dollarChar   byte = '$'
 	backtickChar byte = '`'
 	newLineChar  byte = '\n'
+)
+
+const (
+	stdoutRedirectWord            = ">"
+	stdoutRedirectWordAlternative = "1>"
+	stderrRedirectWord            = "2>"
+	stdoutAppendWord              = ">>"
+	stdoutAppendWordAlternative   = "1>>"
+	stderrAppendWord              = "2>>"
 )
 
 type Token struct {
@@ -156,17 +167,25 @@ func process(tokens []Token) ([]Token, error) {
 			value := sb.String()
 
 			switch value {
-			case ">", "1>", "2>":
+			case stdoutRedirectWord, stdoutRedirectWordAlternative, stderrRedirectWord, stdoutAppendWord, stdoutAppendWordAlternative, stderrAppendWord:
 				if pos+1 >= len(tokens) || tokens[pos+1].Type != Word {
 					return nil, fmt.Errorf("Expected a string, but found end of the input")
 				}
 
-				t := StdoutRedirect
-				if value == "2>" {
-					t = StderrRedirect
+				var valueType tokenType
+
+				switch value {
+				case stdoutRedirectWord, stdoutRedirectWordAlternative:
+					valueType = StdoutRedirect
+				case stderrRedirectWord:
+					valueType = StderrRedirect
+				case stdoutAppendWord, stdoutAppendWordAlternative:
+					valueType = StdoutAppend
+				case stderrAppendWord:
+					valueType = StderrAppend
 				}
 
-				result = append(result, Token{Type: t, Value: tokens[pos+1].Value})
+				result = append(result, Token{Type: valueType, Value: tokens[pos+1].Value})
 				pos += 2
 			default:
 				result = append(result, Token{Type: Word, Value: sb.String()})
@@ -183,40 +202,33 @@ func process(tokens []Token) ([]Token, error) {
 	return result, nil
 }
 
-func Tokenize(input string) ([]string, *Token, *Token, error) {
-	var stdoutRedirect *Token
-	var stderrRedirect *Token
+func Tokenize(input string) ([]string, []*Token, error) {
+	var redirects []*Token
+
 	tokens, err := tokenize(input)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, redirects, err
 	}
 
 	tokens, err = process(tokens)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, redirects, err
 	}
 
-	var result []string
+	var args []string
 
 	for idx, token := range tokens {
 		if idx == 0 && token.Type != Word {
-			return nil, nil, nil, fmt.Errorf("Expected a string, but found a: %s", token.Type)
+			return nil, redirects, fmt.Errorf("Expected a string, but found a: %s", token.Type)
 		}
 
-		if token.Type == StdoutRedirect {
-			stdoutRedirect = &Token{Type: token.Type, Value: token.Value}
-			continue
-		}
-
-		if token.Type == StderrRedirect {
-			stderrRedirect = &Token{Type: token.Type, Value: token.Value}
-			continue
-		}
-
-		if token.Type != whitespace {
-			result = append(result, token.Value)
+		switch token.Type {
+		case StdoutRedirect, StderrRedirect, StderrAppend, StdoutAppend:
+			redirects = append(redirects, &Token{Type: token.Type, Value: token.Value})
+		case Word:
+			args = append(args, token.Value)
 		}
 	}
 
-	return result, stdoutRedirect, stderrRedirect, nil
+	return args, redirects, nil
 }

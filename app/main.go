@@ -24,7 +24,7 @@ func main() {
 
 		line := scanner.Text()
 
-		args, stdoutRedirect, stderrRedirect, err := tokenizer.Tokenize(line)
+		args, redirects, err := tokenizer.Tokenize(line)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err.Error())
 			defaultWriter.Flush()
@@ -40,26 +40,38 @@ func main() {
 		writer := defaultWriter
 		errWriter := os.Stderr
 
-		if stderrRedirect != nil {
-			file, err := os.OpenFile(stderrRedirect.Value, os.O_CREATE|os.O_WRONLY, 0644)
+		for _, redirect := range redirects {
+			switch redirect.Type {
+			case tokenizer.StdoutRedirect, tokenizer.StdoutAppend:
+				flag := os.O_CREATE | os.O_WRONLY
+				if redirect.Type == tokenizer.StdoutAppend {
+					flag = os.O_CREATE | os.O_APPEND | os.O_WRONLY
+				}
 
-			if err != nil {
-				fmt.Fprintln(errWriter, "error:", err.Error())
-				continue
+				file, err := os.OpenFile(redirect.Value, flag, 0644)
+
+				if err != nil {
+					fmt.Fprintln(errWriter, "error:", err.Error())
+					continue
+				}
+
+				writer = bufio.NewWriter(file)
+			case tokenizer.StderrRedirect:
+				flag := os.O_CREATE | os.O_WRONLY
+				if redirect.Type == tokenizer.StderrAppend {
+					flag = os.O_CREATE | os.O_APPEND | os.O_WRONLY
+				}
+
+				file, err := os.OpenFile(redirect.Value, flag, 0644)
+
+				if err != nil {
+					fmt.Fprintln(errWriter, "error:", err.Error())
+					continue
+				}
+
+				errWriter = file
 			}
 
-			errWriter = file
-		}
-
-		if stdoutRedirect != nil {
-			file, err := os.OpenFile(stdoutRedirect.Value, os.O_CREATE|os.O_WRONLY, 0644)
-
-			if err != nil {
-				fmt.Fprintln(errWriter, "error:", err.Error())
-				continue
-			}
-
-			writer = bufio.NewWriter(file)
 		}
 
 		command, ok := builtIns.Get(cmd)
