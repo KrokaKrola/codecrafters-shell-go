@@ -12,6 +12,7 @@ const (
 	Word           tokenType = "word"
 	whitespace     tokenType = "whitespace"
 	StdoutRedirect tokenType = "stdoutRedirect"
+	StderrRedirect tokenType = "stderrRedirect"
 )
 
 const (
@@ -155,12 +156,17 @@ func process(tokens []Token) ([]Token, error) {
 			value := sb.String()
 
 			switch value {
-			case ">", "1>":
+			case ">", "1>", "2>":
 				if pos+1 >= len(tokens) || tokens[pos+1].Type != Word {
 					return nil, fmt.Errorf("Expected a string, but found end of the input")
 				}
 
-				result = append(result, Token{Type: StdoutRedirect, Value: tokens[pos+1].Value})
+				t := StdoutRedirect
+				if value == "2>" {
+					t = StderrRedirect
+				}
+
+				result = append(result, Token{Type: t, Value: tokens[pos+1].Value})
 				pos += 2
 			default:
 				result = append(result, Token{Type: Word, Value: sb.String()})
@@ -177,27 +183,33 @@ func process(tokens []Token) ([]Token, error) {
 	return result, nil
 }
 
-func Tokenize(input string) ([]string, *Token, error) {
+func Tokenize(input string) ([]string, *Token, *Token, error) {
 	var stdoutRedirect *Token
+	var stderrRedirect *Token
 	tokens, err := tokenize(input)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	tokens, err = process(tokens)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var result []string
 
 	for idx, token := range tokens {
 		if idx == 0 && token.Type != Word {
-			return nil, nil, fmt.Errorf("Expected a string, but found a: %s", token.Type)
+			return nil, nil, nil, fmt.Errorf("Expected a string, but found a: %s", token.Type)
 		}
 
 		if token.Type == StdoutRedirect {
 			stdoutRedirect = &Token{Type: token.Type, Value: token.Value}
+			continue
+		}
+
+		if token.Type == StderrRedirect {
+			stderrRedirect = &Token{Type: token.Type, Value: token.Value}
 			continue
 		}
 
@@ -206,5 +218,5 @@ func Tokenize(input string) ([]string, *Token, error) {
 		}
 	}
 
-	return result, stdoutRedirect, nil
+	return result, stdoutRedirect, stderrRedirect, nil
 }

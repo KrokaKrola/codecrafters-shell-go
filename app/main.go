@@ -24,7 +24,7 @@ func main() {
 
 		line := scanner.Text()
 
-		args, stdoutRedirect, err := tokenizer.Tokenize(line)
+		args, stdoutRedirect, stderrRedirect, err := tokenizer.Tokenize(line)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err.Error())
 			defaultWriter.Flush()
@@ -38,12 +38,24 @@ func main() {
 		cmd := args[0]
 
 		writer := defaultWriter
+		errWriter := os.Stderr
+
+		if stderrRedirect != nil {
+			file, err := os.OpenFile(stderrRedirect.Value, os.O_CREATE|os.O_WRONLY, 0644)
+
+			if err != nil {
+				fmt.Fprintln(errWriter, "error:", err.Error())
+				continue
+			}
+
+			errWriter = file
+		}
 
 		if stdoutRedirect != nil {
 			file, err := os.OpenFile(stdoutRedirect.Value, os.O_CREATE|os.O_WRONLY, 0644)
 
 			if err != nil {
-				fmt.Fprintln(os.Stderr, "error:", err.Error())
+				fmt.Fprintln(errWriter, "error:", err.Error())
 				continue
 			}
 
@@ -52,14 +64,14 @@ func main() {
 
 		command, ok := builtIns.Get(cmd)
 		if !ok {
-			executables.RunExecutable(writer, args)
+			executables.RunExecutable(writer, errWriter, args)
 
 			writer.Flush()
 			continue
 		}
 
 		if err := command.Run(writer, args); err != nil {
-			fmt.Fprintln(writer, err.Error())
+			fmt.Fprintln(errWriter, err.Error())
 			writer.Flush()
 			continue
 		}
